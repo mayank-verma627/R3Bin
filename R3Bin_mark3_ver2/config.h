@@ -34,8 +34,8 @@
 #define servoBaseRotate 135
 //Tilt Servo Angles
 #define servoTiltHome 92
-#define servoTiltForward 70
-#define servoTiltBackward 110
+#define servoTiltForward 50
+#define servoTiltBackward 130
 //Servo Motion Parameters
 #define servoStepSize 2
 #define servoStepDelayMS 0
@@ -74,6 +74,9 @@ extern int metalBinFillLevel;
 extern int misBinFillLevel;
 extern const char* binStatus;
 extern const char* errorCode;
+extern int response;
+
+
 void connectToWiFi();
 void sendBinData();
 //============================================================================

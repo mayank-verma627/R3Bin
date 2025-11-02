@@ -2,12 +2,13 @@
 
 const char* ssid = "Esp32";
 const char* password = "mayank@627";
-const char* SUPABASE_URL = "https://wyacdsybudwpmqcwybey.supabase.co/rest/v1/waste_bins";
+const char* SUPABASE_URL = "https://wyacdsybudwpmqcwybey.supabase.co/rest/v1/bin_daily_data";
 const char* SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5YWNkc3lidWR3cG1xY3d5YmV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Nzg2NDU5OSwiZXhwIjoyMDczNDQwNTk5fQ.VaJrHbwC2VrvDp4YkmPgPQ4jWrV4kGHHfRHUWtrBFng";
 
 const char* binId = "BIN-001";
-const char* Version = "v1.2.1 - 10302025"; //solved the bug for the onnline update 
+const char* Version = "v1.2.1 - 11012025"; //solved the bug for the onnline update 
 
+const char* bins [] = {"None", "Plastics", "Paper", "Metal", "Mis"};
 
 void connectToWiFi(){
   Serial.print(F("Connecting to WiFi..."));
@@ -30,8 +31,8 @@ void connectToWiFi(){
 }
 
 void sendBinData(){
-  if(millis() - lastUpdate > 60000){
-    
+  if(millis() - lastUpdate > 10000){
+    String lastDetected=bins[response-1];
     plasticBinFillLevel = binFillStatus(IRSensorPin3);
     paperBinFillLevel = binFillStatus(IRSensorPin4);
     metalBinFillLevel = binFillStatus(IRSensorPin5);
@@ -48,6 +49,7 @@ void sendBinData(){
     doc["SubBin3"] = metalBinFillLevel;
     doc["SubBin4"] = misBinFillLevel;
     doc["ErrorCodes"] = errorCode;
+    doc["LastDetected"] = lastDetected;
     
      String jsonString;
   serializeJson(doc, jsonString);
@@ -56,10 +58,11 @@ void sendBinData(){
   Serial.print(F("BinId: ")); Serial.println(binId);
   Serial.print(F("Status: ")); Serial.println(binStatus);
   Serial.print(F("SubBins: ")); 
-  Serial.print(subBin1); Serial.print(F("%, "));
-  Serial.print(subBin2); Serial.print(F("%, "));
-  Serial.print(subBin3); Serial.print(F("%, "));
-  Serial.print(subBin4); Serial.println(F("%"));
+  Serial.print(plasticBinFillLevel); Serial.print(F("%, "));
+  Serial.print(paperBinFillLevel); Serial.print(F("%, "));
+  Serial.print(metalBinFillLevel); Serial.print(F("%, "));
+  Serial.print(misBinFillLevel); Serial.println(F("%"));
+  Serial.print(lastDetected); Serial.println(F("%"));
   Serial.print(F("Error: ")); Serial.println(errorCode);
   Serial.print(F("JSON: ")); Serial.println(jsonString);
   
@@ -99,4 +102,6 @@ void sendBinData(){
   }
   
   Serial.println(F("---------------------------\n"));
-}
+  lastUpdate=millis();
+  }
+  }

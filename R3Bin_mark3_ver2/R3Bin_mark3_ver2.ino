@@ -8,6 +8,8 @@ int misBinFillLevel = 0;
 const char* binStatus = "Initializing";
 const char* errorCode = "None";
 
+int response=1;
+
 void setup() {
   Serial.begin(115200);
   Serial.println("R3Bin Starting.....");
@@ -38,11 +40,13 @@ void loop() {
   
   if(isObjectDetected()==true){
     Serial.println("Object is Detected");
-    int response = sendAndReceiveInt(1);
+    delay(200);
+    response = sendAndReceiveInt(1);
     
     if(response != -1){
       if(isMetalDetected()){
         Serial.println("Metal detected, overriding to metal bin");
+        response=metalBin;
         reachDestination(metalBin);
         sendInt(3);
       }
@@ -54,6 +58,8 @@ void loop() {
     }
     else{
       Serial.println("No response from RPi");
+      response=misBin;
+      reachDestination(response);
     }
     
     Serial.println("Waste deposited. Ready for next item.");
