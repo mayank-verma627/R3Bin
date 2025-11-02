@@ -27,14 +27,14 @@ void setup() {
 void loop() {
   // Send bin data periodically
   sendBinData();
-  
+  sendInt(0);
   // Debug: Print sensor values
-  Serial.print(analogRead(IRSensorPin1)); Serial.print(" || ");
-  Serial.print(analogRead(IRSensorPin2)); Serial.print(" || ");
-  Serial.print(analogRead(IRSensorPin3)); Serial.print(" || ");
-  Serial.print(analogRead(IRSensorPin4)); Serial.print(" || ");
-  Serial.print(analogRead(IRSensorPin5)); Serial.print(" || ");
-  Serial.println(analogRead(IRSensorPin6)); // FIXED: Changed print to println for new line
+//  Serial.print(analogRead(IRSensorPin1)); Serial.print(" || ");
+//  Serial.print(analogRead(IRSensorPin2)); Serial.print(" || ");
+//  Serial.print(analogRead(IRSensorPin3)); Serial.print(" || ");
+//  Serial.print(analogRead(IRSensorPin4)); Serial.print(" || ");
+//  Serial.print(analogRead(IRSensorPin5)); Serial.print(" || ");
+//  Serial.println(analogRead(IRSensorPin6)); // FIXED: Changed print to println for new line
   
   if(isObjectDetected()==true){
     Serial.println("Object is Detected");
