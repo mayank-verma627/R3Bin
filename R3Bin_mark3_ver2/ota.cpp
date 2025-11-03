@@ -1,9 +1,8 @@
 #include "config.h"
 
-#define VERSION_URL "https://github.com/mayank-verma627/R3Bin/blob/main/R3Bin_mark3_ver2/Version.txt"
-#define FIRMWARE_URL "https://raw.githubusercontent.com/mayank-verma627/fostride/master/esp32_codes/remote_firware_update/remote_firware_update.ino.esp32.bin"
-
-String currentVersion = "v1.2.1 - 11012025";
+#define VERSION_URL "https://raw.githubusercontent.com/mayank-verma627/R3Bin/refs/heads/main/R3Bin_mark3_ver2/Version.txt"
+#define FIRMWARE_URL "https://raw.githubusercontent.com/mayank-verma627/R3Bin/main/R3Bin_mark3_ver2/R3Bin_mark3_ver2.ino.esp32da.bin"
+String currentVersion = "v2.2.1 - 11012025";
 
 void otaCheck(){
   if (checkForUpdate()) {
