@@ -33,7 +33,7 @@
 #define servoBaseHome 45
 #define servoBaseRotate 135
 //Tilt Servo Angles
-#define servoTiltHome 92
+#define servoTiltHome 90
 #define servoTiltForward 50
 #define servoTiltBackward 130
 //Servo Motion Parameters
