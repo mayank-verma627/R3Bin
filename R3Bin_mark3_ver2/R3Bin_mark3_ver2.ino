@@ -16,7 +16,7 @@ void setup() {
   
   // Initialize WiFi first
   connectToWiFi();
-  
+  otaCheck();
   // Initialize RPi communication
   initRpi();  
   // Initialize sensors and mechanism
@@ -28,7 +28,7 @@ void setup() {
 
 void loop() {
   // Send bin data periodically
-  //sendBinData();
+  sendBinData();
   sendInt(0);
   // Debug: Print sensor values
   Serial.print(analogRead(IRSensorPin1)); Serial.print(" || ");
@@ -64,7 +64,6 @@ void loop() {
     }
     
     Serial.println("Waste deposited. Ready for next item.");
-    delay(2000);
   }
   
   delay(100);  // Small delay to prevent Serial spam

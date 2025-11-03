@@ -4,6 +4,8 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <Update.h>
+
 #define DEVICE_NAME "R3Bin"
 #define MANUFACTURER "Fostride"
 //======================= HARDWARE PIN DEFINITIONS =======================
@@ -79,4 +81,10 @@ extern int response;
 
 void connectToWiFi();
 void sendBinData();
+//============================================================================
+
+//===========================OTA Update====================================
+void otaCheck();
+bool checkForUpdate();
+bool performOTA();
 //============================================================================
