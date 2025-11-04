@@ -1,10 +1,10 @@
-#pragma once 
+git#pragma once 
 #include <Arduino.h>
 #include <ESP32Servo.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <Update.h>
+//#include <Update.h>
 
 #define DEVICE_NAME "R3Bin"
 #define MANUFACTURER "Fostride"
@@ -84,7 +84,7 @@ void sendBinData();
 //============================================================================
 
 //===========================OTA Update====================================
-void otaCheck();
-bool checkForUpdate();
-bool performOTA();
+//void otaCheck();
+//bool checkForUpdate();
+//bool performOTA();
 //============================================================================

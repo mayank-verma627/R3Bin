@@ -15,7 +15,8 @@ int receiveInt(){  // FIXED: Typo "recieveInt" -> "receiveInt"
   unsigned long startTime = millis();
   unsigned long timeout = 5000;  // 5 second timeout
   
-  while(millis() - startTime < timeout){  // FIXED: Added timeout instead of infinite loop
+  //while(millis() - startTime < timeout)
+  {  // FIXED: Added timeout instead of infinite loop
     if(Serial2.available() > 0){  // FIXED: Check if data is available
       int received = Serial2.parseInt();
       received = toConvert(received);
