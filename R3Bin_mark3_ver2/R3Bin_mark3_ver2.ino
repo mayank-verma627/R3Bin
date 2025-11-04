@@ -74,7 +74,7 @@ void uploadTask(void * parameter) {
     sendBinData();
     
     // Check every 5 seconds if it's time to send
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+   // vTaskDelay(5000 / portTICK_PERIOD_MS);
   }
 }
 

@@ -8,7 +8,7 @@ const char* SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 const char* binId = "BIN-001";
 const char* Version = "v1.3.0 - FreeRTOS"; // Updated version
 
-const int send_to_supa_time=5000;
+const int send_to_supa_time=10000;
 const char* bins[] = {"None", "Plastics", "Paper", "Metal", "Mis"};
 
 void connectToWiFi() {
@@ -56,7 +56,7 @@ void sendBinData() {
   StaticJsonDocument<256> doc;
   doc["BinId"] = binId;
   doc["BinVersion"] = Version;
-  doc["BinStatus"] = binStatus;
+  doc["BinStatus"] = "Opera";
   doc["SubBin1"] = plasticBinFillLevel;
   doc["SubBin2"] = paperBinFillLevel;
   doc["SubBin3"] = metalBinFillLevel;
@@ -77,7 +77,7 @@ void sendBinData() {
   Serial.print(misBinFillLevel); Serial.println(F("%"));
   Serial.print(F("Last Detected: ")); Serial.println(lastDetected);
   Serial.print(F("JSON: ")); Serial.println(jsonString);
-
+  delay(3000);
   // Check WiFi connection
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println(F("[ERROR] WiFi Disconnected! Skipping upload."));
@@ -95,7 +95,7 @@ void sendBinData() {
   String url = String(SUPABASE_URL) ;
   
   Serial.print(F("[HTTP] Connecting to: ")); Serial.println(url);
-  
+  delay(3000);
   http.begin(url);
   http.addHeader(F("Content-Type"), F("application/json"));
   http.addHeader(F("apikey"), SUPABASE_KEY);
@@ -105,7 +105,7 @@ void sendBinData() {
   unsigned long uploadStart = millis();
   int httpResponseCode = http.POST(jsonString);
   unsigned long uploadTime = millis() - uploadStart;
-
+  delay(3000);
   Serial.print(F("[HTTP] Response Code: "));
   Serial.println(httpResponseCode);
   Serial.print(F("[HTTP] Upload took: "));
@@ -125,11 +125,12 @@ void sendBinData() {
   } else {
     Serial.print(F("[ERROR] HTTP POST failed: "));
     Serial.println(http.errorToString(httpResponseCode));
+    delay(3000);
   }
 
   http.end();
   Serial.println(F("--- UPLOAD COMPLETE ---\n"));
-  
+  delay(3000);
   // Update the last upload timestamp
   lastUpdate = millis();
 }
