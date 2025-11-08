@@ -1,5 +1,7 @@
 #include "config.h"
 
+int in=0;
+
 // Define the global variables here
 unsigned long lastUpdate = 0;
 int plasticBinFillLevel = 0;
@@ -17,70 +19,158 @@ TaskHandle_t UploadTaskHandle;
 // Task for continuous sensor monitoring and object detection
 void sensorTask(void * parameter) {
   for(;;) {
-    // Send status to RPi
     sendInt(0);
     
-    // Debug: Print sensor values (reduced frequency to avoid spam)
     static unsigned long lastPrint = 0;
-    if(millis() - lastPrint > 100) {  // Print every 100ms instead of every loop
-      Serial.print(analogRead(IRSensorPin1)); Serial.print(" || ");
-      Serial.print(analogRead(IRSensorPin2)); Serial.print(" || ");
-      Serial.print(analogRead(IRSensorPin3)); Serial.print(" || ");
-      Serial.print(analogRead(IRSensorPin4)); Serial.print(" || ");
-      Serial.print(analogRead(IRSensorPin5)); Serial.print(" || ");
-      Serial.print(analogRead(IRSensorPin6)); Serial.print(" || ");
-      Serial.println(isMetalDetected());
+    if(millis() - lastPrint > 1000) {  // Print every 1 second for better readability
+      // Update all bin fill levels
+      plasticBinFillLevel = binFillStatus(IRSensorPin3);
+      paperBinFillLevel = binFillStatus(IRSensorPin4);
+      metalBinFillLevel = binFillStatus(IRSensorPin5);
+      misBinFillLevel = binFillStatus(IRSensorPin6);
+      
+      // Display bin status
+      Serial.println("\n========== BIN STATUS ==========");
+      Serial.print("Plastic Bin:  "); 
+      Serial.print(plasticBinFillLevel); 
+      Serial.println(plasticBinFillLevel == 100 ? "% [FULL]" : "% [EMPTY]");
+      
+      Serial.print("Paper Bin:    "); 
+      Serial.print(paperBinFillLevel); 
+      Serial.println(paperBinFillLevel == 100 ? "% [FULL]" : "% [EMPTY]");
+      
+      Serial.print("Metal Bin:    "); 
+      Serial.print(metalBinFillLevel); 
+      Serial.println(metalBinFillLevel == 100 ? "% [FULL]" : "% [EMPTY]");
+      
+      Serial.print("Misc Bin:     "); 
+      Serial.print(misBinFillLevel); 
+      Serial.println(misBinFillLevel == 100 ? "% [FULL]" : "% [EMPTY]");
+      
+      // Display object detection sensors
+      Serial.println("\n--- Detection Sensors ---");
+      Serial.print("IR Sensor 1: "); 
+      Serial.println(digitalRead(IRSensorPin1) == LOW ? "OBJECT DETECTED" : "Clear");
+      Serial.print("IR Sensor 2: "); 
+      Serial.println(digitalRead(IRSensorPin2) == LOW ? "OBJECT DETECTED" : "Clear");
+      
+      // Display metal detection
+      Serial.print("Metal Detect: "); 
+      Serial.println(isMetalDetected() ? "YES" : "NO");
+      Serial.println("================================\n");
+      
       lastPrint = millis();
     }
     
     // Check for object detection
     if(isObjectDetected() == true) {
-      Serial.println("Object is Detected");
-      vTaskDelay(200 / portTICK_PERIOD_MS);  // Non-blocking delay
+      Serial.println("\n!!! OBJECT DETECTED !!!\n");
       
-      response = sendAndReceiveInt(1);
-      vTaskDelay(500 / portTICK_PERIOD_MS);
+      // METAL DETECTION PRIORITY: Check for metal for approximately 1 second
+      bool metalDetected = false;
+      unsigned long metalCheckStart = millis();
+      const unsigned long METAL_CHECK_DURATION = 1000;  // 1 second
       
-      if(response != -1) {
+      Serial.println("Checking for metal for 1 second...");
+      while(millis() - metalCheckStart < METAL_CHECK_DURATION) {
         if(isMetalDetected()) {
-          Serial.println("Metal detected, overriding to metal bin");
-          response = metalBin;
+          metalDetected = true;
+          Serial.println("✓ Metal detected!");
+          break;  // Exit early if metal is found
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);  // Check every 50ms
+      }
+      
+      if(metalDetected) {
+        // Metal was detected - handle metal bin routing with handshake
+        Serial.println("Metal confirmed - initiating handshake with RPi");
+        
+        // Send metal detection signal to RPi (code 3) and wait for acknowledgment
+        int rpiResponse = sendAndReceiveInt(3);
+        Serial.println("Metal detection signal (3) sent to RPi");
+        
+        // Wait for RPi to send back acknowledgment (expecting 3)
+        if(rpiResponse == 3) {
+          Serial.println("✓ RPi acknowledged metal detection (received 3)");
+          
+          // Give RPi additional time to process
+          vTaskDelay(500 / portTICK_PERIOD_MS);
+          
+          // Now move to metal bin
+          Serial.println("→ Moving to metal bin");
           reachDestination(metalBin);
-          sendInt(3);
+          
+          // Wait for deposit to complete
+          vTaskDelay(500 / portTICK_PERIOD_MS);
+          
+          Serial.println("✓ Metal waste deposited successfully.");
+          response = metalBin;  // Update response for upload task
         }
         else {
-          Serial.print("Moving to bin: ");
-          Serial.println(response);
-          reachDestination(response);
+          // RPi didn't acknowledge properly
+          Serial.print("⚠ Warning: Expected 3 from RPi, received: ");
+          Serial.println(rpiResponse);
+          Serial.println("Proceeding to metal bin anyway");
+          
+          // Still move to metal bin for safety
+          reachDestination(metalBin);
+          vTaskDelay(500 / portTICK_PERIOD_MS);
+          response = metalBin;  // Update response for upload task
         }
       }
       else {
-        Serial.println("No response from RPi");
-        response = misBin;
-        reachDestination(response);
+        // No metal detected after 1 second - proceed with RPi classification
+        Serial.println("No metal detected - requesting RPi classification");
+        
+        // Request classification from RPi (code 1)
+        response = sendAndReceiveInt(1);        
+        if(response != -1 && response >= 1 && response <= 4) {
+          // Valid response received
+          Serial.print("✓ RPi classified waste - moving to bin: ");
+          Serial.println(response);
+          reachDestination(response);
+          
+          // Give RPi time to process before next cycle
+          vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
+        else {
+          // No valid response from RPi - route to miscellaneous bin
+          Serial.println("⚠ No valid response from RPi - routing to miscellaneous bin");
+          response = misBin;
+          reachDestination(response);
+         }
       }
       
-      Serial.println("Waste deposited. Ready for next item.");
+      Serial.println("✓ Waste deposited. Ready for next item.\n");
+      
+      // Additional delay before accepting next object to ensure RPi is ready
     }
     
-    vTaskDelay(10 / portTICK_PERIOD_MS);  // Small delay to prevent CPU hogging
+    vTaskDelay(100 / portTICK_PERIOD_MS);  // Small delay to prevent CPU hogging
   }
 }
 
+  
 // Task for periodic data upload to Supabase
 void uploadTask(void * parameter) {
   for(;;) {
-    // Call sendBinData which handles its own timing (60 second interval)
+    // Call sendBinData which handles its own timing
     sendBinData();
     
-    // Check every 5 seconds if it's time to send
-   // vTaskDelay(5000 / portTICK_PERIOD_MS);
+    // Yield to prevent watchdog timeout
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("R3Bin Starting.....");
+  delay(1000);  // Give serial time to initialize
+  
+  Serial.println("\n\n");
+  Serial.println("================================");
+  Serial.println("    R3Bin Starting.....");
+  Serial.println("    Version: " + String(Version));
+  Serial.println("================================\n");
   
   // Initialize WiFi first
   connectToWiFi();
@@ -92,37 +182,38 @@ void setup() {
   initSensors();
   initMechanism();
   
-  Serial.println("Creating FreeRTOS tasks...");
+  Serial.println("\n[SETUP] Creating FreeRTOS tasks...");
   
   // Create sensor task on Core 0 (high priority)
   xTaskCreatePinnedToCore(
-    sensorTask,           // Task function
-    "SensorTask",         // Task name
-    10000,                // Stack size (bytes)
-    NULL,                 // Parameters
-    2,                    // Priority (higher = more important)
-    &SensorTaskHandle,    // Task handle
+    sensorTask,
+    "SensorTask",
+    10000,
+    NULL,
+    2,                    // Highest priority
+    &SensorTaskHandle,
     0                     // Core 0
   );
   
   // Create upload task on Core 1 (lower priority)
   xTaskCreatePinnedToCore(
-    uploadTask,           // Task function
-    "UploadTask",         // Task name
-    10000,                // Stack size (bytes)
-    NULL,                 // Parameters
-    1,                    // Priority (lower than sensor task)
-    &UploadTaskHandle,    // Task handle
-    1                     // Core 1 (different core!)
+    uploadTask,
+    "UploadTask",
+    16384,                // Larger stack for HTTP
+    NULL,
+    1,
+    &UploadTaskHandle,
+    1                     // Core 1
   );
   
-  Serial.println("R3Bin Ready - Running on dual cores!");
-  Serial.println("Core 0: Sensor monitoring");
-  Serial.println("Core 1: Data upload");
+  Serial.println("\n================================");
+  Serial.println("✓ R3Bin Ready - Running on dual cores!");
+  Serial.println("  Core 0: Sensor monitoring");
+  Serial.println("  Core 1: Data upload");
+  Serial.println("================================\n");
 }
 
 void loop() {
-  // Main loop can be empty or used for other tasks
-  // All work is done by FreeRTOS tasks
+  // Main loop yields to prevent watchdog
   vTaskDelay(1000 / portTICK_PERIOD_MS);
 }

@@ -41,9 +41,9 @@ void sendBinData() {
   
   // Prepare data
   if (response < 1) {
-    response = 0;
+    response = 4;
   }
-  String lastDetected = bins[response - 1];
+  String lastDetected = bins[response];
   
   plasticBinFillLevel = binFillStatus(IRSensorPin3);
   paperBinFillLevel = binFillStatus(IRSensorPin4);

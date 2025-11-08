@@ -1,25 +1,32 @@
 #include "config.h"
 
-// Define threshold value (adjust based on your sensor readings)
-#define IR_THRESHOLD 4000  // Adjust this value based on your serial monitor readings
-
 void initSensors() {
-  // Analog pins don't need pinMode for analogRead
-  pinMode(metalSensorPin1, INPUT);
+  // Configure all IR sensor pins as INPUT
+  pinMode(IRSensorPin1, INPUT);
+  pinMode(IRSensorPin2, INPUT);
+  pinMode(IRSensorPin3, INPUT);
+  pinMode(IRSensorPin4, INPUT);
+  pinMode(IRSensorPin5, INPUT);
+  pinMode(IRSensorPin6, INPUT);
+  
+  // Configure metal sensor pins as INPUT
+
   pinMode(metalSensorPin2, INPUT);
   pinMode(metalSensorPin3, INPUT);
+  
+  // Configure status LED
   pinMode(statusLED, OUTPUT);
   digitalWrite(statusLED, HIGH);
+  
   Serial.println("All Sensors initialized");
 }
 
 bool isObjectDetected() {
-  int sensor1 = analogRead(IRSensorPin1);
-  int sensor2 = analogRead(IRSensorPin2);
+  int sensor1 = digitalRead(IRSensorPin1);
+  int sensor2 = digitalRead(IRSensorPin2);
   
-  // Object detected when value is BELOW threshold
-  // (analog IR sensors typically output LOW voltage when object is detected)
-  if(sensor1 < IR_THRESHOLD || sensor2 < IR_THRESHOLD){
+  // Object detected when sensor reads LOW (most IR sensors are active LOW)
+  if(sensor1 == LOW || sensor2 == LOW){
     Serial.print("IR1: "); Serial.print(sensor1);
     Serial.print(" | IR2: "); Serial.println(sensor2);
     return true;
@@ -28,12 +35,25 @@ bool isObjectDetected() {
 }
 
 int binFillStatus(int binNumber) {
-  int reading = analogRead(binNumber);
-  return map(reading, 0, 4095, 100, 0);  // 0-4095 maps to 100-0% (inverted for fill level)
+  int reading = digitalRead(binNumber);
+  
+  // When object is detected (sensor reads LOW), return 100
+  // When no object (sensor reads HIGH), return 0
+  if(reading == LOW) {
+    return 100;  // Bin full (object detected)
+  } else {
+    return 0;    // Bin empty (no object detected)
+  }
 }
 
 bool isMetalDetected() {
-  return (digitalRead(metalSensorPin1) == HIGH ||
-          digitalRead(metalSensorPin2) == HIGH ||
-          digitalRead(metalSensorPin3) == HIGH);
+  int metal2 = digitalRead(metalSensorPin2);
+  int metal3 = digitalRead(metalSensorPin3);
+  
+  // Metal detected when any sensor reads HIGH (most metal sensors are active HIGH)
+  if( metal2 == HIGH || metal3 == HIGH) {
+    Serial.println("Metal detected!");
+    return true;
+  }
+  return false; 
 }
